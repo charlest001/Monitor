@@ -68,11 +68,10 @@ vector<int> LinuxParser::Pids() {
 
 // TODO: Read and return the system memory utilization
 float LinuxParser::MemoryUtilization() {
-    float memTotal = 0.0, memFree = 0.0;
-    string key, value;
+    float memTotal(0), memFree(0);
+    string key, value, line;
     std::ifstream ifs(kProcDirectory + kMeminfoFilename);
-    if(ifs){
-        string line;
+    if(ifs.is_open()){
         while(std::getline(ifs, line)){
             std::istringstream stream(line);
             stream >> key >> value;
@@ -83,7 +82,7 @@ float LinuxParser::MemoryUtilization() {
             }
         }
     }
-    return memTotal - memFree;
+    return (memTotal - memFree) / memTotal;
 }
 
 // TODO: Read and return the system uptime
@@ -109,7 +108,17 @@ long LinuxParser::ActiveJiffies(int pid[[maybe_unused]]) { return 0; }
 long LinuxParser::ActiveJiffies() { return 0; }
 
 // TODO: Read and return the number of idle jiffies for the system
-long LinuxParser::IdleJiffies() { return 0; }
+long LinuxParser::IdleJiffies() {
+    string line, cpu, user, nice, system, idle;
+    std::ifstream ifs(kProcDirectory + kStatFilename);
+    if(ifs.is_open()){
+        std::getline(ifs, line);
+        std::istringstream stream(line);
+        stream >> cpu >> user >> nice >> system >> idle;
+    }
+    long idleLong = stol(idle);
+    return idleLong;
+}
 
 // TODO: Read and return CPU utilization
 vector<string> LinuxParser::CpuUtilization() { return {}; }
@@ -122,7 +131,22 @@ int LinuxParser::TotalProcesses() {
     return counter; }
 
 // TODO: Read and return the number of running processes
-int LinuxParser::RunningProcesses() { return 0; }
+int LinuxParser::RunningProcesses() {
+    string line, key, value;
+    int procs_running(0);
+    std::ifstream ifs(kProcDirectory + kStatFilename);
+    if(ifs.is_open()){
+        while(getline(ifs, line)){
+            std::istringstream stream(line);
+            while(stream >> key >> value){
+                if(key == "procs_running"){
+                    procs_running = stoi(value);
+                }
+            }
+        }
+    }
+    return procs_running;
+}
 
 // TODO: Read and return the command associated with a process
 // REMOVE: [[maybe_unused]] once you define the function
